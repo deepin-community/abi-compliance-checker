@@ -1,0 +1,19 @@
+Description: require -fPIC on arm64 in addition to x86_64 and arm
+ With gcc-8, a-c-c now fails to build its test cases with a relocation error
+ on arm64.  Add arm64 to the list of archs where we require -fPIC.
+Author: Steve Langasek <steve.langasek@ubuntu.com>
+Last-Modified: 2018-08-29
+
+Index: abi-compliance-checker-2.3/modules/Internals/RegTests.pm
+===================================================================
+--- abi-compliance-checker-2.3.orig/modules/Internals/RegTests.pm
++++ abi-compliance-checker-2.3/modules/Internals/RegTests.pm
+@@ -4954,7 +4954,7 @@
+             $BuildCmd = $GccPath." -shared -x c++ $ObjName.$SrcE -lstdc++ -o $ObjName.$LExt -g -Og";
+             $BuildCmd_Test = $GccPath." -x c++ test.$SrcE -lstdc++ -Wl,$ObjName.$LExt -o test";
+         }
+-        if(getArch_GCC(1)=~/\A(arm|x86_64)\Z/i)
++        if(getArch_GCC(1)=~/\A(arm|aarch64|x86_64)\Z/i)
+         { # relocation R_ARM_MOVW_ABS_NC against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+             $BuildCmd .= " -fPIC -DPIC";
+             $BuildCmd_Test .= " -fPIC -DPIC";

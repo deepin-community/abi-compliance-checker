@@ -1,0 +1,43 @@
+Source: abi-compliance-checker
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 9), dpkg-dev (>= 1.16.1~), help2man
+Maintainer: Mathieu Malaterre <malat@debian.org>
+Standards-Version: 4.1.0
+Homepage: http://ispras.linux-foundation.org/index.php/ABI_compliance_checker
+XS-Testsuite: autopkgtest
+
+Package: abi-compliance-checker
+Architecture: all
+Depends: build-essential, ${misc:Depends}, ${perl:Depends}
+Recommends: ctags
+Suggests: doc-base, icheck
+Description: tool to compare ABI compatibility of shared C/C++ library versions
+ abi-compliance-checker can be used to help reduce the possibility of
+ an application crashing when the shared libraries it links against
+ have changed.  Signatures and data type definitions from two separate
+ versions of a library are compared by examining the shared objects
+ (.so) files themselves, and by analysing the header files (.h)
+ provided for the two versions of the library and their dependencies.
+ .
+ Shared library developers trying to strive for binary compatibility
+ between releases may also use this tool to detect if an any
+ accidental application binary interface (ABI) changes have been
+ introduced.
+ .
+ The checker may also be used for assessing binary compatibility
+ between different Linux distributions.
+
+Package: dh-acc
+Architecture: all
+Depends: abi-compliance-checker (= ${binary:Version}),
+         debhelper,
+         ${misc:Depends},
+         ${perl:Depends}
+Description: debhelper addon to compare ABI compatibility of shared C/C++ library versions
+ dh-acc is an addon to facilitate generating ABI compatibility reports
+ by comparing known ABI dumps with newly build ABI at Debian package
+ build time. Thus providing monitoring and early detection of ABI
+ breaks in shared libraries.
+ .
+ This package provides dh sequence addon and cdbs integration snippet.

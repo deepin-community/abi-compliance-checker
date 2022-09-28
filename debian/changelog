@@ -1,0 +1,269 @@
+abi-compliance-checker (2.3-0.2) unstable; urgency=medium
+
+  * Non-maintainer upload
+
+  [ Steve Langasek ]
+  * debian/patches/fpic-for-arm64.patch: require -fPIC on arm64 in
+    addition to x86_64 and arm (Closes: #907604).
+  * debian/patches/oom-exec-helper.patch: Run packing commands in a
+    subprocess (Closes: #907602).
+
+ -- Gianfranco Costamagna <locutusofborg@debian.org>  Tue, 04 Sep 2018 10:28:14 +0200
+
+abi-compliance-checker (2.3-0.1) unstable; urgency=medium
+
+  * Non-maintainer upload
+  * New upstream release (Closes: #904126)
+  * Update copyright and licenses
+
+ -- Gianfranco Costamagna <locutusofborg@debian.org>  Thu, 19 Jul 2018 20:57:41 +0200
+
+abi-compliance-checker (2.2-2) unstable; urgency=medium
+
+  * Update Std-Vers to 4.1.0, no changes needed
+  * Fix lintian warning: privacy-breach-logo
+
+ -- Mathieu Malaterre <malat@debian.org>  Wed, 20 Sep 2017 14:24:17 +0200
+
+abi-compliance-checker (2.2-1) unstable; urgency=medium
+
+  * New upstream release: 2.2. Remove patches:
+    - d/p/emergency-mode.patch
+    - d/p/fix-test-compilation.patch
+    - d/p/remove-gcc-check.patch
+  * Remove Ryan Niebur from Uploaders. Closes: #856362.
+    Thanks for your work !
+
+ -- Mathieu Malaterre <malat@debian.org>  Fri, 15 Sep 2017 21:44:01 +0200
+
+abi-compliance-checker (1.99.22-1.1) unstable; urgency=high
+
+  [ Dmitry Shachnev ]
+  * Add a patch to fix tests compilation with new GCC.
+  * Add a patch to not rely on GCC for symbols mangling, it is not working
+    with GCC 6 and GCC 7 because of PR c++/78040.
+
+  [ Gianfranco Costamagna ]
+  * Non-maintainer upload
+  * Fix autopkgtests, due to bad doit call (Closes: #868473)
+
+ -- Gianfranco Costamagna <locutusofborg@debian.org>  Fri, 01 Sep 2017 07:51:53 +0200
+
+abi-compliance-checker (1.99.22-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Mathieu Malaterre <malat@debian.org>  Sat, 16 Jul 2016 21:24:11 +0200
+
+abi-compliance-checker (1.99.20-3) unstable; urgency=medium
+
+  * Fix copyright file missing. Closes: #825556
+
+ -- Mathieu Malaterre <malat@debian.org>  Wed, 01 Jun 2016 17:47:57 +0200
+
+abi-compliance-checker (1.99.20-2) unstable; urgency=medium
+
+  * Make sure to build manpage during indep build.
+
+ -- Mathieu Malaterre <malat@debian.org>  Mon, 23 May 2016 09:55:55 +0200
+
+abi-compliance-checker (1.99.20-1) unstable; urgency=medium
+
+  * New release. Closes: #825053. Remove patches applied upstream:
+    - d/p/bug798470.patch
+    - d/p/bug805441.patch
+  * Bump Std-Vers to 3.9.8, no changes needed
+
+ -- Mathieu Malaterre <malat@debian.org>  Mon, 23 May 2016 09:09:59 +0200
+
+abi-compliance-checker (1.99.14-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Restore support for GNU/Hurd - backport from upstream (Closes: #805441)
+
+ -- Mattias Ellert <mattias.ellert@fysast.uu.se>  Sun, 08 May 2016 06:34:53 +0200
+
+abi-compliance-checker (1.99.14-1) unstable; urgency=medium
+
+  * New release. Refresh patches.
+
+ -- Mathieu Malaterre <malat@debian.org>  Fri, 06 Nov 2015 21:42:20 +0100
+
+abi-compliance-checker (1.99.11-1) unstable; urgency=medium
+
+  * New upstream
+  * Bump Std-Vers to 3.9.6, no changes needed
+  * drop timestamp from generated HTML reports. Closes: #798470 
+  * make the generated .abi.tar.gz files reproducible. Closes: #798481
+
+ -- Mathieu Malaterre <malat@debian.org>  Wed, 16 Sep 2015 21:53:39 +0200
+
+abi-compliance-checker (1.99.9-2) unstable; urgency=low
+
+  * dh-acc should depend on debhelper. Closes: #749907
+  * use --prefix/--destdir for reproducible builds. Closes: #739319
+  * Bump Std-Vers to 3.9.5, no changes needed
+
+ -- Mathieu Malaterre <malat@debian.org>  Sat, 05 Jul 2014 14:39:01 +0200
+
+abi-compliance-checker (1.99.9-1) unstable; urgency=low
+
+  * New upstream. Closes: #735684
+  * Refresh patch since gcc 4.8.2 is known to be fixed in debian
+
+ -- Mathieu Malaterre <malat@debian.org>  Sat, 01 Feb 2014 11:51:56 +0100
+
+abi-compliance-checker (1.99.8.5-4) unstable; urgency=medium
+
+  * Change "gcc, binutils" depends to "build-essential" as DEP8 runner
+    demonstrates, "gcc & binutils" alone are not enough to execute and
+    verify that abi-compliance-checker is properly operational. The
+    increase in pulled in dependencies is small, and most of the time is
+    already installed in environments where people want to execute
+    abi-compiance-checker.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Fri, 24 Jan 2014 14:30:01 +0000
+
+abi-compliance-checker (1.99.8.5-3) unstable; urgency=medium
+
+  * Team upload
+  * Remove gcc version check, gcc is fixed in debian. This should also
+    resolve autopackage DEP8 test failure as seen at
+    http://ci.debian.net/#package/abi-compliance-checker
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Thu, 23 Jan 2014 14:55:10 +0000
+
+abi-compliance-checker (1.99.8.5-2) unstable; urgency=low
+
+  * New upstream
+    + add new options: -affected-limit/-cpp-incompatible
+
+ -- Mathieu Malaterre <malat@debian.org>  Sun, 13 Oct 2013 15:19:48 +0200
+
+abi-compliance-checker (1.99.8.2-1) unstable; urgency=low
+
+  * New upstream
+  * Make sure dh_acc pulls a-c-c (= ${binary:Version})
+  * Automate man page generation
+
+ -- Mathieu Malaterre <malat@debian.org>  Mon, 26 Aug 2013 14:56:19 +0200
+
+abi-compliance-checker (1.99.8-1) unstable; urgency=low
+
+  * New upstream release
+    - Fixed compatibility with gcc-4.8
+  * Update watch file to point at github
+
+ -- Dmitrijs Ledkovs <xnox@debian.org>  Thu, 01 Aug 2013 10:52:43 +0100
+
+abi-compliance-checker (1.99.7-1) unstable; urgency=low
+
+  * New upstream
+    - Fixed default arguments of methods (broken in 1.99.1)
+
+ -- Mathieu Malaterre <malat@debian.org>  Mon, 29 Jul 2013 21:56:09 +0200
+
+abi-compliance-checker (1.99.1-1) unstable; urgency=low
+
+  [ James Hunt ]
+  * Added DEP-8 self-test. Closes: #709357
+
+  [ Mathieu Malaterre ]
+  * New upstream, upload to sid
+  * Update man page, suggests icheck
+  * Recommends ctags. Closes: #711503
+  * Remove patches applied upstream:
+    - d/p/allow-suffix-on-dumps.patch 
+
+ -- Mathieu Malaterre <malat@debian.org>  Tue, 11 Jun 2013 10:48:45 +0200
+
+abi-compliance-checker (1.98.8-1~exp1) experimental; urgency=low
+
+  * New upstream release
+  * Add dh_acc to generate and compare library dumps at build time,
+    together with addons for dh(7) and cdbs.
+  * Bump standards version, bump debhelper to 9, use 3.0 (quilt) format,
+    update Vcs-Svn field to canonical form, remove obsolete
+    DM-Upload-Allowed.
+  * Apply a patch to allow suffixes on a-c-c abi dumps.
+
+ -- Dmitrijs Ledkovs <dmitrij.ledkov@ubuntu.com>  Fri, 19 Apr 2013 16:56:57 +0100
+
+abi-compliance-checker (1.97.7-1) unstable; urgency=low
+
+  * New upstream
+    - Optimization of memory usage (5%-10%) and performance (5%-10%)
+    - Improved support for GCC 4.0-4.5
+    - New Options: -open -sort
+  * Move doc-base to Suggest. Closes: #673091
+  * Fix man page using --info to report all command line options
+
+ -- Mathieu Malaterre <malat@debian.org>  Thu, 31 May 2012 14:21:07 +0200
+
+abi-compliance-checker (1.97.5-1) unstable; urgency=low
+
+  * New upstream
+    - Add support for GCC 4.7
+    - Optimization of memory usage (20%-30%) and performance (10%-20%)
+  * Install documentation using doc-base
+  * Remove usage of pwd in d/rules
+
+ -- Mathieu Malaterre <malat@debian.org>  Tue, 15 May 2012 10:22:06 +0200
+
+abi-compliance-checker (1.97.3-1) unstable; urgency=low
+
+  * New upsteam:
+   - checks both binary and source-level compatibility issues with C/C++ APIs
+  * fix lintian warning for the manpage
+
+ -- Mathieu Malaterre <malat@debian.org>  Thu, 05 Apr 2012 15:46:42 +0200
+
+abi-compliance-checker (1.96.8-1) unstable; urgency=low
+
+  * New release (add --headers-list and --lang options).
+  * Bump Standard-Version to 3.9.3, no changes needed.
+
+ -- Mathieu Malaterre <mathieu.malaterre@gmail.com>  Mon, 05 Mar 2012 10:39:04 +0100
+
+abi-compliance-checker (1.96.1-2) unstable; urgency=low
+
+  * Update man page. Closes: #568655
+
+ -- Mathieu Malaterre <mathieu.malaterre@gmail.com>  Wed, 25 Jan 2012 11:41:17 +0100
+
+abi-compliance-checker (1.96.1-1) unstable; urgency=low
+
+  * New upstream 1.96.1. Closes: #568650, #598798
+  * Fix typo in d/control. Closes: #592975
+  * Fix d/watch file
+
+ -- Mathieu Malaterre <mathieu.malaterre@gmail.com>  Wed, 21 Dec 2011 09:34:38 +0100
+
+abi-compliance-checker (1.6-1) unstable; urgency=low
+
+  [ Ryan Niebur ]
+  * New Upstream Version
+  * improve short description from to meet devrefs suggestions
+  * Debian Policy 3.8.3
+  * reqiure debhelper 7.0.50
+  * adjustements to the manpage to fix man errors
+  * fix hyphen minus signs in manpage
+  * s/This/abi-compliance-checker/ in long description
+
+  [ Paul Sladen ]
+  * Include handwritten manpage
+  + Remove help2man dependency
+  * debian/watch: Case insentisve match (WikiMedia CamelCasing)
+  * debian/copyright:
+  + add copyright year
+  + expand "RAS" to Russian Academy of Sciences
+  + add email address for upstream maintainer
+  * debian/control: tweak Description:
+
+ -- Ryan Niebur <ryanryan52@gmail.com>  Wed, 02 Sep 2009 17:29:18 -0700
+
+abi-compliance-checker (1.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #540247)
+
+ -- Ryan Niebur <ryanryan52@gmail.com>  Thu, 06 Aug 2009 14:43:30 -0700

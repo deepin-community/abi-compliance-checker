@@ -1,0 +1,9 @@
+Document: abi-compliance-checker
+Title: ABI Compliance Checker
+Author: Andrey Ponomarenko
+Abstract: Documentation of ABI Compliance Checker as HTML format
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/abi-compliance-checker/index.html
+Files: /usr/share/doc/abi-compliance-checker/*

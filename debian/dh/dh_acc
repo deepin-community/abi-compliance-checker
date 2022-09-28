@@ -1,0 +1,78 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+dh_acc - abi-compliance-checker dump generator and comparison
+
+=cut
+
+use strict;
+use Debian::Debhelper::Dh_Lib;
+
+=head1 SYNOPSIS
+
+B<dh_acc> [S<I<debhelper options>>]
+
+=head1 DESCRIPTION
+
+B<dh_acc> is a debhelper program that is responsible for generating
+abi-complinace-checker dumps and comparing them with a 'base' dump at build time.
+This facilitates monitoring and early detection of API/ABI brekage.
+
+=head1 FILES
+
+=over 4
+
+=item debian/I<package>.acc
+
+Any abi-compiance-checker acceptable library and header descriptor. To
+generate a stub XML template, use B<abi-compliance-checker
+-d>. Alternatively one can simply specify a list headers, libraries,
+or directories. Please note, these should be specified relative to
+source package root directory, e.g. F<./debian/tmp/usr/lib/>,
+F<./build-2.7/> etc.
+
+=item debian/I<package>.abi.tar.gz
+
+This is a base API/ABI one wishes to stay compatible with. The newly
+generated API/ABI dump will be compared with this one, if available.
+
+=back
+
+=cut
+
+init();
+
+foreach my $package (@{$dh{DOPACKAGES}}) {
+	my $tmp=tmpdir($package);
+	my $definition=pkgfile($package,"acc");
+	my $base=pkgfile($package,"abi.tar.gz");
+	# Call isnative to set $dh{VERSION}
+	isnative($package);
+	my $version = $dh{VERSION};
+	my $arch = dpkg_architecture_value("DEB_HOST_MULTIARCH");
+	my $path = "$tmp/usr/lib/$arch/dh-acc/${package}_$version";
+	my $abidump = "${path}.abi.tar.gz";
+
+	if ($definition) {
+	    # TODO if next command fails, should output debug/log info?
+	    doit('abi-compliance-checker', '-q', '-l', $package, '-v1', $version, '-dump', $definition, '-dump-path', $abidump);
+	}
+	if ($base) {
+	    doit('abi-compliance-checker', '-l', $package, '-d1', $base, '-d2', $abidump, '-report-path', ${path}.'_report.html');
+	    doit('abi-compliance-checker', '-q', '-l', $package, '-d1', $base, '-d2', $abidump, '-xml', '-report-path', ${path}.'_report.xml');
+	}
+	# TODO clean up temp files & logs
+}
+
+=head1 SEE ALSO
+
+L<debhelper(7)>
+
+This program is a part of debhelper.
+
+=head1 AUTHOR
+
+Dmitrijs Ledkovs <xnox@debian.org>
+
+=cut

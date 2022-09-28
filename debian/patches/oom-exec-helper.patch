@@ -1,0 +1,293 @@
+Description: Run packing commands in a subprocess
+ On low-memory VMs (such as autopkgtest runners at scale), a-c-c can OOM when
+ trying to launch a subprocess towards the end of the run due to the main
+ process's memory usage being >= 50% of available system memory.  Since
+ freeing memory for no-longer-needed variables is non-trivial in perl, just
+ address this by creating a subprocess for handling any system() calls late
+ in the process.
+Author: Steve Langasek <steve.langasek@ubuntu.com>
+Last-Modified: 2018-08-29
+
+Index: abi-compliance-checker-2.3/abi-compliance-checker.pl
+===================================================================
+--- abi-compliance-checker-2.3.orig/abi-compliance-checker.pl
++++ abi-compliance-checker-2.3/abi-compliance-checker.pl
+@@ -60,6 +60,9 @@
+ use Cwd qw(abs_path cwd);
+ use Data::Dumper;
+ 
++# stupid pipe tricks
++use IO::Handle;
++
+ my $TOOL_VERSION = "2.3";
+ my $ABI_DUMP_VERSION = "3.5";
+ my $ABI_DUMP_VERSION_MIN = "3.5";
+@@ -9340,9 +9343,9 @@
+                 exitStatus("Not_Found", "can't find \"tar\" command");
+             }
+             chdir($UnpackDir);
+-            system("$TarCmd -xvzf \"$Path\" >\"$TmpDir/null\"");
+-            if($?) {
+-                exitStatus("Error", "can't extract \'$Path\' ($?): $!");
++            my @res = child_exec("$TarCmd -xvzf \"$Path\" >\"$TmpDir/null\"");
++            if($res[0]) {
++                exitStatus("Error", "can't extract \'$Path\' ($res[0]): $res[1]");
+             }
+             chdir($In::Opt{"OrigDir"});
+             my @Contents = cmdFind($UnpackDir, "f");
+@@ -9371,11 +9374,11 @@
+         my $Pkg = $To."/".$Name.".zip";
+         unlink($Pkg);
+         chdir($To);
+-        system("$ZipCmd -j \"$Name.zip\" \"$Path\" >\"".$In::Opt{"Tmp"}."/null\"");
+-        if($?)
++        my @res = child_exec("$ZipCmd -j \"$Name.zip\" \"$Path\" >\"".$In::Opt{"Tmp"}."/null\"");
++        if($res[0])
+         { # cannot allocate memory (or other problems with "zip")
+             chdir($In::Opt{"OrigDir"});
+-            exitStatus("Error", "can't pack the ABI dump: ".$!);
++            exitStatus("Error", "can't pack the ABI dump: ".$res[1]);
+         }
+         chdir($In::Opt{"OrigDir"});
+         unlink($Path);
+@@ -9395,10 +9398,10 @@
+         if(-e $Pkg) {
+             unlink($Pkg);
+         }
+-        system($TarCmd, "-C", $From, "-czf", $Pkg, $Name);
+-        if($?)
++        @res = child_exec($TarCmd, "-C", $From, "-czf", $Pkg, $Name);
++        if($res[0])
+         { # cannot allocate memory (or other problems with "tar")
+-            exitStatus("Error", "can't pack the ABI dump: ".$!);
++            exitStatus("Error", "can't pack the ABI dump: ".$res[1]);
+         }
+         unlink($Path);
+         return $To."/".$Name.".tar.gz";
+@@ -10143,6 +10146,37 @@
+     initAliases_TypeAttr($LVer);
+ }
+ 
++sub child_exec(@)
++{
++    # known failure to handle values that need shell escaping.
++    print CHILD_WTR join(' ',@_) . "\n";
++    chomp($line = <CHILD_RDR>);
++    my @results = split(/ /,$line, 2);
++    return (int($results[0]),$results[1]);
++}
++
++sub reap_child(@)
++{
++    my ($handle, $pid) = @_;
++    print $handle "exit\n";
++    close $handle;
++    waitpid($pid,0);
++}
++
++sub exec_helper(@)
++{
++    my ($reader, $writer) = @_;
++    do {
++        chomp($line = <$reader>);
++	next if (!$line);
++        if ($line eq 'exit') {
++            exit(0);
++        }
++        system($line);
++        print $writer "$? $!\n";
++    } while(1);
++}
++
+ sub scenario()
+ {
+     setTarget("default");
+@@ -10395,6 +10429,22 @@
+         testTool();
+         exit(0);
+     }
++
++    # stupid pipe tricks
++    pipe(PARENT_RDR, CHILD_WTR);
++    pipe(CHILD_RDR, PARENT_WTR);
++    CHILD_WTR->autoflush(1);
++    PARENT_WTR->autoflush(1);
++    if ($helper_pid = fork()) {
++        close PARENT_RDR;
++        close PARENT_WTR;
++    } else {
++        die "cannot fork: $!" unless defined $helper_pid;
++        close CHILD_RDR;
++        close CHILD_WTR;
++        exec_helper(PARENT_RDR, PARENT_WTR);
++    }
++
+     if($In::Opt{"DumpSystem"})
+     { # --dump-system
+         if(not $In::Opt{"TargetSysInfo"})
+@@ -10406,10 +10456,12 @@
+         }
+         
+         if(not $In::Opt{"TargetSysInfo"}) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Error", "-sysinfo option should be specified to dump system ABI");
+         }
+         
+         if(not -d $In::Opt{"TargetSysInfo"}) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access \'".$In::Opt{"TargetSysInfo"}."\'");
+         }
+         
+@@ -10417,6 +10469,7 @@
+         if($In::Opt{"DumpSystem"}=~/\.(xml|desc)\Z/)
+         { # system XML descriptor
+             if(not -f $In::Opt{"DumpSystem"}) {
++                reap_child(CHILD_WTR, $helper_pid);
+                 exitStatus("Access_Error", "can't access file \'".$In::Opt{"DumpSystem"}."\'");
+             }
+             
+@@ -10434,12 +10487,15 @@
+             my $SystemRoot = $In::Opt{"SystemRoot"};
+             
+             if(not -e $SystemRoot."/usr/lib") {
++                reap_child(CHILD_WTR, $helper_pid);
+                 exitStatus("Access_Error", "can't access '".$SystemRoot."/usr/lib'");
+             }
+             if(not -e $SystemRoot."/lib") {
++                reap_child(CHILD_WTR, $helper_pid);
+                 exitStatus("Access_Error", "can't access '".$SystemRoot."/lib'");
+             }
+             if(not -e $SystemRoot."/usr/include") {
++                reap_child(CHILD_WTR, $helper_pid);
+                 exitStatus("Access_Error", "can't access '".$SystemRoot."/usr/include'");
+             }
+             readSysDesc("
+@@ -10457,6 +10513,7 @@
+                 </search_libs>");
+         }
+         else {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Error", "-sysroot <dirpath> option should be specified, usually it's \"/\"");
+         }
+         detectDefaultPaths(undef, undef, "bin", "gcc"); # to check symbols
+@@ -10466,6 +10523,7 @@
+             checkWin32Env();
+         }
+         dumpSystem();
++        reap_child(CHILD_WTR, $helper_pid);
+         exit(0);
+     }
+     
+@@ -10481,17 +10539,20 @@
+         }
+         
+         cmpSystems($In::Desc{1}{"Path"}, $In::Desc{2}{"Path"});
++        reap_child(CHILD_WTR, $helper_pid);
+         exit(0);
+     }
+     
+     if(not $In::Opt{"CountSymbols"})
+     {
+         if(not $In::Opt{"TargetLib"}) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Error", "library name is not selected (-l option)");
+         }
+         else
+         { # validate library name
+             if($In::Opt{"TargetLib"}=~/[\*\/\\]/) {
++                reap_child(CHILD_WTR, $helper_pid);
+                 exitStatus("Error", "\"\\\", \"\/\" and \"*\" symbols are not allowed in the library name");
+             }
+         }
+@@ -10504,6 +10565,7 @@
+     if(my $SymbolsListPath = $In::Opt{"SymbolsListPath"})
+     {
+         if(not -f $SymbolsListPath) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$SymbolsListPath\'");
+         }
+         foreach my $S (split(/\s*\n\s*/, readFile($SymbolsListPath)))
+@@ -10515,6 +10577,7 @@
+     if(my $TypesListPath = $In::Opt{"TypesListPath"})
+     {
+         if(not -f $TypesListPath) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$TypesListPath\'");
+         }
+         foreach my $Type (split(/\s*\n\s*/, readFile($TypesListPath)))
+@@ -10526,6 +10589,7 @@
+     if(my $SymbolsListPath = $In::Opt{"SkipSymbolsListPath"})
+     {
+         if(not -f $SymbolsListPath) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$SymbolsListPath\'");
+         }
+         foreach my $Interface (split(/\s*\n\s*/, readFile($SymbolsListPath)))
+@@ -10537,6 +10601,7 @@
+     if(my $TypesListPath = $In::Opt{"SkipTypesListPath"})
+     {
+         if(not -f $TypesListPath) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$TypesListPath\'");
+         }
+         foreach my $Type (split(/\s*\n\s*/, readFile($TypesListPath)))
+@@ -10548,6 +10613,7 @@
+     if(my $HeadersList = $In::Opt{"SkipHeadersPath"})
+     {
+         if(not -f $HeadersList) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$HeadersList\'");
+         }
+         foreach my $Path (split(/\s*\n\s*/, readFile($HeadersList)))
+@@ -10560,6 +10626,7 @@
+     if(my $ParamNamesPath = $In::Opt{"ParamNamesPath"})
+     {
+         if(not -f $ParamNamesPath) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$ParamNamesPath\'");
+         }
+         foreach my $Line (split(/\n/, readFile($ParamNamesPath)))
+@@ -10587,6 +10654,7 @@
+     if(my $AppPath = $In::Opt{"AppPath"})
+     {
+         if(not -f $AppPath) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access file \'$AppPath\'");
+         }
+         
+@@ -10599,6 +10667,7 @@
+     if(my $Path = $In::Opt{"CountSymbols"})
+     {
+         if(not -e $Path) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exitStatus("Access_Error", "can't access \'$Path\'");
+         }
+         
+@@ -10643,6 +10712,7 @@
+         }
+         
+         printMsg("INFO", $Count);
++        reap_child(CHILD_WTR, $helper_pid);
+         exit(0);
+     }
+     
+@@ -10651,9 +10721,11 @@
+         createABIFile(1, $In::Opt{"DumpABI"});
+         
+         if($In::Opt{"CompileError"}) {
++            reap_child(CHILD_WTR, $helper_pid);
+             exit(getErrorCode("Compile_Error"));
+         }
+         
++        reap_child(CHILD_WTR, $helper_pid);
+         exit(0);
+     }
+     
+@@ -10670,6 +10742,7 @@
+     elsif($In::Opt{"SrcOnly"}) {
+         compareAPIs("Source");
+     }
++    reap_child(CHILD_WTR, $helper_pid);
+     exitReport();
+ }
+ 

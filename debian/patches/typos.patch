@@ -1,0 +1,53 @@
+Description: Fix typos reported by lintian
+Forwarded: no
+Author: Mathieu Malaterre <malat@debian.org>
+
+Index: abi-compliance-checker-2.3/abi-compliance-checker.pl
+===================================================================
+--- abi-compliance-checker-2.3.orig/abi-compliance-checker.pl
++++ abi-compliance-checker-2.3/abi-compliance-checker.pl
+@@ -446,7 +446,7 @@
+       Alias for: --report-format=xml or --dump-format=xml
+ 
+   -app|-application PATH
+-      This option allows to specify the application that should be checked
++      This option allows one to specify the application that should be checked
+       for portability to the new library version.
+ 
+   -headers-only
+@@ -476,7 +476,7 @@
+   -test
+       Run internal tests. Create two binary incompatible versions of a sample
+       library and run the tool to check them for compatibility. This option
+-      allows to check if the tool works correctly in the current environment.
++      allows one to check if the tool works correctly in the current environment.
+ 
+   -test-dump
+       Test ability to create, read and compare ABI dumps.
+@@ -598,11 +598,11 @@
+ 
+ FILTER SYMBOLS OPTIONS:
+   -symbols-list PATH
+-      This option allows to specify a file with a list of symbols (mangled
++      This option allows one to specify a file with a list of symbols (mangled
+       names in C++) that should be checked. Other symbols will not be checked.
+ 
+   -types-list PATH
+-      This option allows to specify a file with a list of types that should
++      This option allows one to specify a file with a list of types that should
+       be checked. Other types will not be checked.
+ 
+   -skip-symbols PATH
+Index: abi-compliance-checker-2.3/doc/Changelog.html
+===================================================================
+--- abi-compliance-checker-2.3.orig/doc/Changelog.html
++++ abi-compliance-checker-2.3/doc/Changelog.html
+@@ -1962,7 +1962,7 @@
+ <b>New Features</b>
+ <ul>
+     <li>
+-        Added "defines" section of the library descriptor: this section allows to add defines at the headers compiling stage
++        Added "defines" section of the library descriptor: this section allows one to add defines at the headers compiling stage
+     </li>
+ </ul>
+ <b>Bug Fixes</b>

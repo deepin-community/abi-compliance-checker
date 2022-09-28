@@ -1,0 +1,36 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE=1
+
+include /usr/share/dpkg/pkg-info.mk
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# nothing
+
+override_dh_auto_install:
+	mkdir -p $(CURDIR)$(DESTDIR)/debian/tmp/usr
+	perl Makefile.pl --prefix=/usr --destdir=$(CURDIR)$(DESTDIR)/debian/tmp -install
+
+override_dh_installchangelogs:
+	dh_installchangelogs doc/Changelog.html
+
+debian/abi-compliance-checker.1: debian/abi-compliance-checker.1.in
+	help2man --help-option=--info --include=$< \
+		--output=$@ --no-info debian/tmp/usr/bin/abi-compliance-checker
+
+override_dh_clean:
+	dh_clean debian/dh/dh_acc.1
+	dh_clean debian/abi-compliance-checker.1
+
+debian/dh/dh_acc.1: debian/dh/dh_acc
+	pod2man -r "dh-acc v$(DEB_VERSION)" -c dh-acc $< $@
+
+# first rule after dh_install should be ok:
+override_dh_installdocs: debian/dh/dh_acc.1 debian/abi-compliance-checker.1
+	dh_installdocs
+	sed -i -e 's@https://s3.amazonaws.com/github/ribbons/@@' ./debian/abi-compliance-checker/usr/share/doc/abi-compliance-checker/*.html
+
+get-orig-source:
+	uscan --download --force-download --rename
